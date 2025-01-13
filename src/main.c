@@ -1,14 +1,25 @@
-#include "backend/ncurses_backend.c"
 #include <stdint.h>
+
+#include "map/map.h"
+#include "entity/entity.h"
+#define MAX_ENTITIES 4096
+
+
+#include "backend/ncurses_backend.c"
+#include "map/simple_map.c"
 
 int main(void) {
     Backend b = ncurses_backend();
-    InputEvent e;
-    RenderEvent cmd;
+    MapGenerator g = simple_map_generator();
+    InputEvent event;
+
+    static Entity ent[MAX_ENTITIES];
+    uint32_t num_ent = 0;
 
     do {
         uint8_t x = 0;
         uint8_t y = 0;
+        RenderEvent cmd;
 
         b.begin_rendering(b);
         b.clear_screen(b);
@@ -24,8 +35,8 @@ int main(void) {
         }
 
         b.finish_rendering(b);
-        e = b.input(b);
-    } while (e != EVENT_QUIT);
+        event = b.input(b);
+    } while (event != EVENT_QUIT);
 
     return 0;
 }
