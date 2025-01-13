@@ -5,11 +5,14 @@
 #define MAX_ENTITIES 4096
 
 
+/*
 #include "backend/ncurses_backend.c"
+*/
+#include "backend/ansi_backend.c"
 #include "game/simple_map.c"
 
 int main(void) {
-    Backend b = ncurses_backend();
+    Backend b = BACKEND();
     MapGenerator g = simple_map_generator();
     InputEvent event;
 

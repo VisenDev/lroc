@@ -83,3 +83,5 @@ Backend ncurses_backend() {
 
     return self;
 }
+
+#define BACKEND ncurses_backend
