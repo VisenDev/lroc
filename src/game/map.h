@@ -1,7 +1,7 @@
 #ifndef MAP_H
 #define MAP_H
 
-#include "../entity/entity.h"
+#include "entity.h"
 #include <stdint.h>
 
 typedef struct {
