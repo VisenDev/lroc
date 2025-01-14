@@ -44,10 +44,11 @@ void ncurses_begin_rendering(struct Backend self) {
 
 void ncurses_finish_rendering(struct Backend self) {
     NCursesContext * ctx = self.ctx;
+    WINDOW* temp = NULL;
 
     /* Swap the front and back buffers*/
     wrefresh(ctx->back);
-    WINDOW* temp = ctx->front;
+    temp = ctx->front;
     ctx->front = ctx->back;
     ctx->back = temp;
 }
