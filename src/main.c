@@ -4,9 +4,11 @@
 #define ALLOCATOR_IMPLEMENTATION
 #include "pimbs/src/allocator.h"
 
+#define MAP_IMPLEMENTATION
 #include "map.h"
+
+#define ENTITY_IMPLEMENTATION
 #include "entity.h"
-#define MAX_ENTITIES 4096
 
 #if   defined(BACKEND_NCURSES)
     #include "ncurses_backend.c"
@@ -17,16 +19,12 @@
     #include "ansi_backend.c"
 #endif /*BACKEND*/
 
-#include "simple_map.c"
-
 int main(void) {
     Allocator a = libc_allocator();
     Backend b = backend_init(a);
-    MapGenerator g = simple_map_generator();
+    MapCreationSettings opt = {0};
+    Map m = map_create(a, opt);
     InputEvent event;
-
-    static Entity ent[MAX_ENTITIES];
-    uint32_t num_ent = 0;
 
     do {
         uint8_t x = 0;
@@ -38,8 +36,8 @@ int main(void) {
 
         for(x = 1; x < 60; ++x) {
             for(y = 1; y < 23; ++y) {
-                cmd.color = x * y % 256;
-                cmd.ch = '@';
+                cmd.data.color = x * y % 256;
+                cmd.data.ch = '@';
                 cmd.x = x;
                 cmd.y = y;
                 b.render(b, cmd);
@@ -49,8 +47,8 @@ int main(void) {
         for(x = 0; x < 80; ++x) {
             for(y = 0; y < 24; ++y) {
                 if(x == 0 || y == 0 || x == 79 || y == 23) {
-                    cmd.color = 244;
-                    cmd.ch = '#';
+                    cmd.data.color = 244;
+                    cmd.data.ch = '#';
                     cmd.x = x;
                     cmd.y = y;
                     b.render(b, cmd);

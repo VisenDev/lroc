@@ -43,20 +43,20 @@ void ansi_render(struct Backend self, RenderEvent cmd) {
     int length;
 
     /*move cursor*/
-    if(prev.x != cmd.x - 1 || prev.y != cmd.y || prev.ch == 0) {
+    if(prev.x != cmd.x - 1 || prev.y != cmd.y || prev.data.ch == 0) {
         length = snprintf(buffer, sizeof(buffer), ANSI_ESC "%d;%dH", cmd.y, cmd.x);
         write(STDOUT_FILENO, buffer, length);
     }
 
 
     /*adjust color*/
-    if(prev.color != cmd.color || prev.ch == 0) {
-        length = snprintf(buffer, sizeof(buffer), ANSI_ESC "38;5;%dm", cmd.color);
+    if(prev.data.color != cmd.data.color || prev.data.ch == 0) {
+        length = snprintf(buffer, sizeof(buffer), ANSI_ESC "38;5;%dm", cmd.data.color);
         write(STDOUT_FILENO, buffer, length);
     }
 
     /*write ch*/
-    length = snprintf(buffer, sizeof(buffer), "%c", cmd.ch);
+    length = snprintf(buffer, sizeof(buffer), "%c", cmd.data.ch);
     write(STDOUT_FILENO, buffer, length);
 
     /*
@@ -77,7 +77,7 @@ void ansi_begin_rendering(struct Backend self) {
 
 void ansi_finish_rendering(struct Backend self) {
     AnsiContext * ctx = self.ctx;
-    ctx->prev.ch = 0;
+    ctx->prev.data.ch = 0;
     write(STDOUT_FILENO, ANSI_GOTO("0", "24"), sizeof(ANSI_GOTO("0", "24")));
 
     fflush(stdout);

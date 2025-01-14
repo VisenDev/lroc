@@ -26,9 +26,9 @@ InputEvent ncurses_input(struct Backend self) {
 void ncurses_render(struct Backend self, RenderEvent cmd) {
     NCursesContext * ctx = self.ctx;
     wmove(ctx->back, cmd.y, cmd.x);
-    wattron(ctx->back, COLOR_PAIR(cmd.color));
-    waddch(ctx->back, cmd.ch);
-    wattroff(ctx->back, COLOR_PAIR(cmd.color));
+    wattron(ctx->back, COLOR_PAIR(cmd.data.color));
+    waddch(ctx->back, cmd.data.ch);
+    wattroff(ctx->back, COLOR_PAIR(cmd.data.color));
 }
 
 void ncurses_clear_screen(struct Backend self) {

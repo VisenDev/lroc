@@ -18,9 +18,13 @@ typedef enum {
 
 typedef struct {
     char ch;
+    uint8_t color; /*ansi terminal 256-color code*/
+} RenderData;
+
+typedef struct {
     uint8_t x;
     uint8_t y;
-    uint8_t color; /*ansi terminal 256-color code*/
+    RenderData data;
 } RenderEvent;
 
 
