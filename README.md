@@ -1,7 +1,7 @@
-## To build
+# To build
 
-# if using ncurses backend
+## If using ncurses backend
 cc src/main.c -lncurses
 
-# else 
+## Else if using ansi backend
 cc src/main.c
