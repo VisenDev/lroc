@@ -32,7 +32,6 @@ int main(void) {
         RenderEvent cmd;
 
         b.begin_rendering(b);
-        b.clear_screen(b);
 
         for(x = 1; x < 60; ++x) {
             for(y = 1; y < 23; ++y) {

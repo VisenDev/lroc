@@ -5,7 +5,7 @@ To use ncurses backend
 cc src/main.c -DBACKEND_NCURSES -lncurses
 ```
 
-To use using ansi escape code backend
+To use ansi backend
 ```sh
 cc src/main.c -DBACKEND_ANSI
 ```

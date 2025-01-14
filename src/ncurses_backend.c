@@ -72,7 +72,6 @@ Backend backend_init(Allocator a) {
     self.ctx = ctx;
     self.input = ncurses_input;
     self.render = ncurses_render;
-    self.clear_screen = ncurses_clear_screen;
     self.deinit = ncurses_deinit;
     self.finish_rendering = ncurses_finish_rendering;
     self.begin_rendering = ncurses_begin_rendering;
