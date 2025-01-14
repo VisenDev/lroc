@@ -41,5 +41,7 @@ int main(void) {
         event = b.input(b);
     } while (event != EVENT_QUIT);
 
+    b.deinit(b);
+
     return 0;
 }
