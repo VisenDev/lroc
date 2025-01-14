@@ -2,6 +2,7 @@
 #define BACKEND_H
 
 #include <stdint.h>
+#include "pimbs/src/allocator.h"
 
 
 /*data types*/
@@ -44,5 +45,7 @@ typedef struct Backend {
     DeinitFn deinit;
 } Backend;
 
+/*init function (defined by each backend) */
+Backend backend_init(Allocator);
 
 #endif /*BACKEND_H*/

@@ -1,6 +1,9 @@
 #include "backend.h"
+#include "pimbs/src/allocator.h"
 #include <stdio.h>
+#include <stdlib.h>
 #include <unistd.h>
+#include <string.h>
 
 #define ANSI_ESC "\x1b["
 #define ANSI_CURSOR_RESET ANSI_ESC "0;0H"
@@ -16,6 +19,10 @@
 #define ANSI_DISABLE_CURSOR ANSI_ESC "?25l"
 #define ANSI_ENABLE_CURSOR ANSI_ESC "?25h"
 
+typedef struct {
+    RenderEvent prev;
+} AnsiContext;
+
 InputEvent ansi_input(struct Backend self) {
     const char ch = getchar();
     switch(ch) {
@@ -30,17 +37,33 @@ InputEvent ansi_input(struct Backend self) {
 }
 
 void ansi_render(struct Backend self, RenderEvent cmd) {
+    AnsiContext * ctx = self.ctx;
+    RenderEvent prev = ctx->prev;
     char buffer[256]; 
     int length;
 
-    length = snprintf(buffer, sizeof(buffer), ANSI_ESC "%d;%dH", cmd.y, cmd.x);
-    write(STDOUT_FILENO, buffer, length);
-    length = snprintf(buffer, sizeof(buffer), ANSI_ESC "38;5;%dm", cmd.color);
-    write(STDOUT_FILENO, buffer, length);
+    /*move cursor*/
+    if(prev.x != cmd.x - 1 || prev.y != cmd.y || prev.ch == 0) {
+        length = snprintf(buffer, sizeof(buffer), ANSI_ESC "%d;%dH", cmd.y, cmd.x);
+        write(STDOUT_FILENO, buffer, length);
+    }
+
+
+    /*adjust color*/
+    if(prev.color != cmd.color || prev.ch == 0) {
+        length = snprintf(buffer, sizeof(buffer), ANSI_ESC "38;5;%dm", cmd.color);
+        write(STDOUT_FILENO, buffer, length);
+    }
+
+    /*write ch*/
     length = snprintf(buffer, sizeof(buffer), "%c", cmd.ch);
     write(STDOUT_FILENO, buffer, length);
+
+    /*
     length = snprintf(buffer, sizeof(buffer), ANSI_COLOR_RESET);
     write(STDOUT_FILENO, ANSI_COLOR_RESET, sizeof(ANSI_COLOR_RESET));
+    */
+    ctx->prev = cmd;
 }
 
 void ansi_clear_screen(struct Backend self) {
@@ -53,20 +76,33 @@ void ansi_begin_rendering(struct Backend self) {
 }
 
 void ansi_finish_rendering(struct Backend self) {
-    (void)self;
+    AnsiContext * ctx = self.ctx;
+    ctx->prev.ch = 0;
     write(STDOUT_FILENO, ANSI_GOTO("0", "24"), sizeof(ANSI_GOTO("0", "24")));
+
     fflush(stdout);
 }
 
 void ansi_deinit(struct Backend self) {
     (void)self;
     printf(ANSI_ENABLE_CURSOR);
+    printf(ANSI_COLOR_RESET);
     fflush(stdout);
 }
 
 
-Backend ansi_backend() {
+Backend backend_init(Allocator a) {
     Backend self = {0};
+    AnsiContext * ctx = a.alloc(a, sizeof(AnsiContext));
+
+    if(ctx == NULL) {
+        fprintf(stderr, "failure to allocate");
+        abort();
+    }
+
+    memset(ctx, 0, sizeof(AnsiContext));
+
+    self.ctx = ctx;
     self.input = ansi_input;
     self.render = ansi_render;
     self.clear_screen = ansi_clear_screen;

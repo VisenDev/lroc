@@ -1,21 +1,27 @@
 #include <stdint.h>
 
-#include "map.h"
-#include "entity.h"
-#define MAX_ENTITIES 4096
-
 #define USE_STDLIB 1
 #define ALLOCATOR_IMPLEMENTATION
 #include "pimbs/src/allocator.h"
 
-#include "ncurses_backend.c"
-/*#include "ansi_backend.c"*/
+#include "map.h"
+#include "entity.h"
+#define MAX_ENTITIES 4096
+
+#if   defined(BACKEND_NCURSES)
+    #include "ncurses_backend.c"
+#elif defined(BACKEND_ANSI)
+    #include "ansi_backend.c"
+#else
+    #warning "No backend specified, defaulting to ANSI"
+    #include "ansi_backend.c"
+#endif /*BACKEND*/
 
 #include "simple_map.c"
 
 int main(void) {
     Allocator a = libc_allocator();
-    Backend b = ncurses_backend(a);
+    Backend b = backend_init(a);
     MapGenerator g = simple_map_generator();
     InputEvent event;
 

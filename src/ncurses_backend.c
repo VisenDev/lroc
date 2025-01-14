@@ -61,7 +61,7 @@ void ncurses_deinit(struct Backend self) {
     ctx->a.free(ctx->a, ctx);
 }
 
-Backend ncurses_backend(Allocator a) {
+Backend backend_init(Allocator a) {
     Backend self = {0};
     NCursesContext * ctx = a.alloc(a, sizeof(NCursesContext));
     if(ctx == NULL) {

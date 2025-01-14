@@ -1,7 +1,11 @@
 # To build
 
-## If using ncurses backend
-cc src/main.c -lncurses
+To use ncurses backend
+```sh
+cc src/main.c -DBACKEND_NCURSES -lncurses
+```
 
-## Else if using ansi backend
-cc src/main.c
+To use using ansi escape code backend
+```sh
+cc src/main.c -DBACKEND_ANSI
+```
