@@ -99,9 +99,12 @@ Backend ncurses_backend(Allocator a) {
         abort();
     }
 
-    for (int i = 0; i < 256; i++) {
-        // Foreground: color i, Background: black.
-        init_pair(i + 1, i, COLOR_BLACK);
+    {
+        short i = 0;
+        for (i = 0; i < 256; i++) {
+            /* Foreground: color i, Background: black.*/
+            init_pair(i + 1, i, COLOR_BLACK);
+        }
     }
 
     /* Initialize double ctx-> */

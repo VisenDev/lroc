@@ -6,7 +6,7 @@
 #include <stdbool.h>
 
 typedef struct {
-    bool impassable;
+    int impassable;
 } EntityQuery;
 
 struct Entity;

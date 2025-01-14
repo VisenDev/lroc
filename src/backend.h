@@ -12,7 +12,7 @@ typedef enum {
     EVENT_DOWN,
     EVENT_LEFT,
     EVENT_RIGHT,
-    EVENT_QUIT,
+    EVENT_QUIT
 } InputEvent;
 
 typedef struct {
