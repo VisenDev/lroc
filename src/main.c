@@ -4,15 +4,18 @@
 #include "entity.h"
 #define MAX_ENTITIES 4096
 
+#define USE_STDLIB 1
+#define ALLOCATOR_IMPLEMENTATION
+#include "pimbs/src/allocator.h"
 
-#include "backend/ncurses_backend.c"
-/*
-#include "backend/ansi_backend.c"
-*/
+#include "ncurses_backend.c"
+/*#include "ansi_backend.c"*/
+
 #include "simple_map.c"
 
 int main(void) {
-    Backend b = BACKEND();
+    Allocator a = libc_allocator();
+    Backend b = ncurses_backend(a);
     MapGenerator g = simple_map_generator();
     InputEvent event;
 

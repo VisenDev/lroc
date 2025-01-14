@@ -1,7 +1,7 @@
 #ifndef ENTITY_H
 #define ENTITY_H
 
-#include "backend/backend.h"
+#include "backend.h"
 #include <stdint.h>
 #include <stdbool.h>
 

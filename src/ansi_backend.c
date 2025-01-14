@@ -82,5 +82,3 @@ Backend ansi_backend() {
 
     return self;
 }
-
-#define BACKEND ansi_backend
