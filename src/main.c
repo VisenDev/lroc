@@ -1,15 +1,15 @@
 #include <stdint.h>
 
-#include "game/map.h"
-#include "game/entity.h"
+#include "map.h"
+#include "entity.h"
 #define MAX_ENTITIES 4096
 
 
-/*
 #include "backend/ncurses_backend.c"
-*/
+/*
 #include "backend/ansi_backend.c"
-#include "game/simple_map.c"
+*/
+#include "simple_map.c"
 
 int main(void) {
     Backend b = BACKEND();
@@ -27,13 +27,25 @@ int main(void) {
         b.begin_rendering(b);
         b.clear_screen(b);
 
-        for(x = 0; x < 80; ++x) {
-            for(y = 0; y < 24; ++y) {
-                cmd.color = x;
+        for(x = 1; x < 60; ++x) {
+            for(y = 1; y < 23; ++y) {
+                cmd.color = x * y % 256;
                 cmd.ch = '@';
                 cmd.x = x;
                 cmd.y = y;
                 b.render(b, cmd);
+            }
+        }
+
+        for(x = 0; x < 80; ++x) {
+            for(y = 0; y < 24; ++y) {
+                if(x == 0 || y == 0 || x == 79 || y == 23) {
+                    cmd.color = 244;
+                    cmd.ch = '#';
+                    cmd.x = x;
+                    cmd.y = y;
+                    b.render(b, cmd);
+                }
             }
         }
 
