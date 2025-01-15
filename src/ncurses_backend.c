@@ -1,4 +1,5 @@
 #include "backend.h"
+#include "map.h"
 #include <ncurses.h>
 #include <stdlib.h>
 #include "pimbs/src/allocator.h"
@@ -7,19 +8,20 @@ typedef struct {
     WINDOW* front;
     WINDOW* back;
     Allocator a;
+    uint8_t display_i;
 } NCursesContext;
 
-InputEvent ncurses_input(struct Backend self) {
+Action ncurses_input(struct Backend self) {
     NCursesContext * ctx = self.ctx;
     const char ch = wgetch(ctx->front);
     switch(ch) {
-        case 'j': return INPUT_DOWN;
-        case 'k': return INPUT_UP;
-        case 'h': return INPUT_LEFT;
-        case 'l': return INPUT_RIGHT;
-        case '.': return INPUT_WAIT;
-        case 'q': return INPUT_QUIT;
-        default:  return INPUT_NIL;
+        case 'j': return ACTION_DOWN;
+        case 'k': return ACTION_UP;
+        case 'h': return ACTION_LEFT;
+        case 'l': return ACTION_RIGHT;
+        case '.': return ACTION_WAIT;
+        case 'q': return ACTION_QUIT;
+        default:  return ACTION_NIL;
     }
 }
 
@@ -38,6 +40,8 @@ void ncurses_clear_screen(struct Backend self) {
 
 void ncurses_begin_rendering(struct Backend self) {
     NCursesContext * ctx = self.ctx;
+    ctx->display_i = 0;
+
     /*clean the buffer before rendering*/
     werase(ctx->back);
 }
@@ -61,6 +65,19 @@ void ncurses_deinit(struct Backend self) {
     ctx->a.free(ctx->a, ctx);
 }
 
+void ncurses_display(struct Backend self, const char * fmt, ...) {
+    NCursesContext * ctx = self.ctx;
+
+    /*move cursor*/
+    wmove(ctx->back, ctx->display_i, map_width + 1);
+    ctx->display_i += 2;
+
+    va_list args;
+    va_start(args, fmt);
+    vwprintw(ctx->back, fmt, args);
+    va_end(args);
+}
+
 Backend backend_init(Allocator a) {
     Backend self = {0};
     NCursesContext * ctx = a.alloc(a, sizeof(NCursesContext));
@@ -75,6 +92,7 @@ Backend backend_init(Allocator a) {
     self.deinit = ncurses_deinit;
     self.finish_rendering = ncurses_finish_rendering;
     self.begin_rendering = ncurses_begin_rendering;
+    self.display = ncurses_display;
 
     initscr();           /* Start curses mode.              */
     raw();               /* Send input on every keystroke.  */

@@ -97,7 +97,7 @@ void map_move_entity(
 }
 
 
-Map map_create(Allocator a, InputEvent * input, MapCreationSettings opt) {
+Map map_create(Allocator a, Action * input, MapCreationSettings opt) {
     Map result = {0};
     uint8_t x = 0;
     uint8_t y = 0;
@@ -111,7 +111,8 @@ Map map_create(Allocator a, InputEvent * input, MapCreationSettings opt) {
         }
     }
 
-    /*player_create(a, input);*/
+    Entity player = player_create(a, input);
+    result.data[5][5] = cell_cons(a, player, result.data[5][5]);
     return result;
 }
 
@@ -124,8 +125,7 @@ void map_deinit(Allocator a, Map map) {
             Cell * ptr = map.data[x][y];
             while(ptr != NULL) {
                 Cell * next = ptr->next;
-                Command cmd = {CMD_DEINIT, 0};
-                ptr->value.order(ptr->value, a, cmd);
+                ptr->value.destroy(ptr->value, a);
                 a.free(a, ptr);
                 ptr = next;
             }

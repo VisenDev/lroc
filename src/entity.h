@@ -26,26 +26,31 @@ typedef enum {
     CMD_DEINIT,
 } CommandId;
 
+/*
 typedef struct {
     CommandId id;
     int amount;
 } Command;
+*/
 
 typedef RenderData (*EntityRenderFn)(struct Entity);
-typedef Command (*EntityUpdateFn)(struct Entity);
+typedef Action (*EntityUpdateFn)(struct Entity);
+typedef void (*EntityDestroyFn)(struct Entity, Allocator);
+/*
 typedef OrderResult (*EntityOrderFn)(struct Entity, Allocator, Command);
+*/
 
 typedef struct Entity {
     void * ctx;
     EntityRenderFn render;
     EntityUpdateFn update;
-    EntityOrderFn order;
+    EntityDestroyFn destroy;
 } Entity;
 
 
 /*entity creation function*/
 Entity immovable_create(Allocator a, char ch, uint8_t color);
-Entity player_create(Allocator a, InputEvent*);
+Entity player_create(Allocator a, Action*);
 
 #endif /*ENTITY_H*/
 
@@ -60,20 +65,12 @@ RenderData immovable_render(struct Entity self) {
     return ctx->render_data;
 }
 
-Command immovable_update(struct Entity self) {
-    Command result = {0};
-    (void)self;
-
-    result.id = CMD_NIL;
-    return result;
+Action immovable_update(struct Entity self) {
+    return ACTION_NIL;
 }
 
-OrderResult immovable_order(struct Entity self, Allocator a, Command cmd) {
-    if(cmd.id == CMD_DEINIT) {
-        a.free(a, self.ctx);
-        return ORDER_EXECUTED;
-    }
-    return ORDER_IGNORED;
+void immovable_destroy(struct Entity self, Allocator a) {
+    a.free(a, self.ctx); 
 }
 
 Entity immovable_create(Allocator a, char ch, uint8_t color) {
@@ -88,16 +85,15 @@ Entity immovable_create(Allocator a, char ch, uint8_t color) {
 
     self.render = immovable_render;
     self.update = immovable_update;
-    self.order =  immovable_order;
 
     return self;
 }
 
 
-
+/*Player*/
 typedef struct {
     uint8_t health;
-    InputEvent * input;
+    Action * input_ptr;
 } PlayerContext;
 
 RenderData player_render(struct Entity self) {
@@ -108,28 +104,29 @@ RenderData player_render(struct Entity self) {
     return data;
 }
 
-Command player_update(struct Entity self) {
+Action player_update(struct Entity self) {
     PlayerContext * ctx = self.ctx;
-    Command result = {0};
-
-    switch(*ctx->input) {
-        case INPUT_UP;
-        
-        /*TODO Other cases*/
-
-    }
-
-    result.id = CMD_WAIT;
-    return result;
+    return *ctx->input_ptr;
 }
 
-void wall_order(struct Entity self, Command cmd) {
-    if(cmd.id == CMD_DEINIT) {
-        self.a.free(self.a, self.ctx);
-    }
+void player_destroy(struct Entity self, Allocator a) {
+    a.free(a, self.ctx);
 }
-RenderEvent player
 
-#endif
+Entity player_create(Allocator a, Action * input_ptr) {
+    Entity self = {0};
+    PlayerContext * ctx = a.alloc(a, sizeof(PlayerContext));
+    assert(ctx);
+
+    ctx->input_ptr = input_ptr;
+    ctx->health = 10;
+    
+    self.ctx = ctx;
+    self.render = player_render;
+    self.update = player_update;
+    self.destroy = player_destroy;
+
+    return self;
+}
 
 #endif /*ENTITY_IMPLEMENTATION*/

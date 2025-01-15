@@ -5,6 +5,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <string.h>
+#include <stdarg.h>
 
 #define ANSI_ESC "\x1b["
 #define ANSI_CURSOR_RESET ANSI_ESC "0;0H"
@@ -23,18 +24,20 @@
 typedef struct {
     RenderEvent prev;
     RenderData last_frame[map_width][map_height];
+    uint8_t display_i;
 } AnsiContext;
 
-InputEvent ansi_input(struct Backend self) {
+Action ansi_input(struct Backend self) {
     const char ch = getchar();
     switch(ch) {
-        case 'j': return INPUT_DOWN;
-        case 'k': return INPUT_UP;
-        case 'h': return INPUT_LEFT;
-        case 'l': return INPUT_RIGHT;
-        case '.': return INPUT_WAIT;
-        case 'q': return INPUT_QUIT;
-        default:  return INPUT_NIL;
+        case '\n': return ansi_input(self);
+        case 'j': return ACTION_DOWN;
+        case 'k': return ACTION_UP;
+        case 'h': return ACTION_LEFT;
+        case 'l': return ACTION_RIGHT;
+        case '.': return ACTION_WAIT;
+        case 'q': return ACTION_QUIT;
+        default:  return ACTION_NIL;
     }
 }
 
@@ -79,7 +82,8 @@ void ansi_render(struct Backend self, RenderEvent cmd) {
 #define GOTO_CURSOR_HOME ANSI_GOTO("0", "24")
 
 void ansi_begin_rendering(struct Backend self) {
-    (void)self;
+    AnsiContext * ctx = self.ctx;
+    ctx->display_i = 0;
     printf(GOTO_CURSOR_HOME);
     printf(ANSI_CLEAR_LINE);
 
@@ -103,6 +107,21 @@ void ansi_deinit(struct Backend self) {
     fflush(stdout);
 }
 
+void ansi_display(struct Backend self, const char * fmt, ...) {
+    AnsiContext * ctx = self.ctx;
+    ctx->prev.data.ch = 0;
+
+    /*move cursor*/
+    printf(ANSI_ESC "%d;%dH", ctx->display_i, map_width + 1);
+    printf(ANSI_COLOR_RESET);
+    ctx->display_i += 2;
+
+    va_list args;
+    va_start(args, fmt);
+    vprintf(fmt, args);
+    va_end(args);
+}
+
 
 Backend backend_init(Allocator a) {
     Backend self = {0};
@@ -121,6 +140,7 @@ Backend backend_init(Allocator a) {
     self.deinit = ansi_deinit;
     self.finish_rendering = ansi_finish_rendering;
     self.begin_rendering = ansi_begin_rendering;
+    self.display = ansi_display;
 
     printf(ANSI_DISABLE_CURSOR);
     /*full buffering*/

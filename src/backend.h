@@ -4,17 +4,17 @@
 #include <stdint.h>
 #include "pimbs/src/allocator.h"
 
-/*data types*/
 typedef enum {
-    INPUT_NIL,
-    INPUT_WAIT,
-    INPUT_UP,
-    INPUT_DOWN,
-    INPUT_LEFT,
-    INPUT_RIGHT,
-    INPUT_QUIT
-} InputEvent;
+    ACTION_NIL,
+    ACTION_WAIT,
+    ACTION_UP,
+    ACTION_DOWN,
+    ACTION_LEFT,
+    ACTION_RIGHT,
+    ACTION_QUIT
+} Action;
 
+/*data types*/
 typedef struct {
     char ch;
     uint8_t color; /*ansi terminal 256-color code*/
@@ -30,11 +30,12 @@ typedef struct {
 struct Backend;
 
 /*Function pointer types*/
-typedef InputEvent (*InputFn)(struct Backend);
+typedef Action     (*InputFn)(struct Backend);
 typedef void       (*RenderFn)(struct Backend, RenderEvent);
 typedef void       (*FinishRenderingFn)(struct Backend);
 typedef void       (*BeginRenderingFn)(struct Backend);
 typedef void       (*DeinitFn)(struct Backend);
+typedef void       (*DisplayFn)(struct Backend, const char * fmt, ...);
 
 /*interface*/
 typedef struct Backend {
@@ -44,6 +45,7 @@ typedef struct Backend {
     FinishRenderingFn finish_rendering;
     BeginRenderingFn begin_rendering;
     DeinitFn deinit;
+    DisplayFn display;
 } Backend;
 
 /*init function (defined by each backend) */
