@@ -46,6 +46,7 @@ typedef struct {
 } MapCreationSettings;
 
 typedef struct {
+    Cell * player;
     Cell * data[map_width][map_height];
 } Map;
 
@@ -69,6 +70,8 @@ void map_move_entity(
     Cell * ptr = map->data[old_x][old_y];
     Cell * prev = NULL;
     assert(entity != NULL);
+
+    fprintf(stderr, "moving entity %p from %d %d to %d %d\n", entity, old_x, old_y, new_x, new_y);
 
     if(!is_point_within_bounds(new_x, new_y, map_width, map_height)) {
        return; 
@@ -112,7 +115,8 @@ Map map_create(Allocator a, Action * input, MapCreationSettings opt) {
     }
 
     Entity player = player_create(a, input);
-    result.data[5][5] = cell_cons(a, player, result.data[5][5]);
+    result.data[5][5] = cell_cons(a, player, NULL);
+    result.player = result.data[5][5];
     return result;
 }
 

@@ -51,38 +51,42 @@ void update(Backend b, Map * m) {
     for(x = 0; x < map_width; ++x) {
         for(y = 0; y < map_height; ++y) {
             Cell * ptr = m->data[x][y];
-            Cell * prev = ptr;
+            Cell * prev = NULL;
 
             while(ptr != NULL) {
                 Action action = {0};
+                action = ptr->value.update(ptr->value);
 
-                if(!ptr->updated) {
-                    ptr->updated = 1;
+                if(ptr == m->player) {
+                    fprintf(stderr, "updating player %p with action %d\n", ptr, action);
+                } else {
+                    fprintf(stderr, "updating entity %p with action %d\n", ptr, action);
+                }
 
-                    action = ptr->value.update(ptr->value);
-
-                    switch(action) {
-                        case ACTION_UP:
-                            b.display(b, "Moving up");
-                            map_move_entity(m, ptr, x, y, x, y - 1);
-                            break;
-                        case ACTION_DOWN:
-                            b.display(b, "Moving down");
-                            map_move_entity(m, ptr, x, y, x, y + 1);
-                            break;
-                        case ACTION_LEFT:
-                            b.display(b, "Moving left");
-                            map_move_entity(m, ptr, x, y, x - 1, y);
-                            break;
-                        case ACTION_RIGHT:
-                            b.display(b, "Moving right");
-                            map_move_entity(m, ptr, x, y, x + 1, y);
-                            break;
-                        default: {}
-                    }
+                switch(action) {
+                    case ACTION_UP:
+                        b.display(b, "Moving up   ");
+                        /*map_move_entity(m, ptr, x, y, x, y - 1);*/
+                        if(prev) {
+                            prev->next = ptr->next;
+                        }
+                        break;
+                    case ACTION_DOWN:
+                        b.display(b, "Moving down");
+                        map_move_entity(m, ptr, x, y, x, y + 1);
+                        break;
+                    case ACTION_LEFT:
+                        b.display(b, "Moving left");
+                        map_move_entity(m, ptr, x, y, x - 1, y);
+                        break;
+                    case ACTION_RIGHT:
+                        b.display(b, "Moving right");
+                        map_move_entity(m, ptr, x, y, x + 1, y);
+                        break;
+                    default: {}
+                }
 
                     /*ptr->value.order(ptr->value, a, c);*/
-                }
 
                 prev = ptr;
                 ptr = ptr->next;
