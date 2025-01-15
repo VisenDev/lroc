@@ -6,25 +6,9 @@
 #include <stdint.h>
 #include <assert.h>
 
-/*
-typedef struct {
-    uint16_t depth;
-    uint64_t seed;
-} MapConfig;
-
-struct MapGenerator;
-
-typedef void (*GenerateMapFn)(struct MapGenerator, MapConfig, Entity[], uint32_t);
-
-typedef struct MapGenerator {
-    void * ctx;
-    GenerateMapFn generate_map;
-} MapGenerator;
-*/
 
 typedef struct Cell {
     Entity value;
-    int updated;
     struct Cell * next;
 } Cell;
 

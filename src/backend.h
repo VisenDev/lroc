@@ -14,16 +14,12 @@ typedef enum {
     ACTION_QUIT
 } Action;
 
-/*data types*/
-typedef struct {
-    char ch;
-    uint8_t color; /*ansi terminal 256-color code*/
-} RenderData;
 
 typedef struct {
-    uint8_t x;
-    uint8_t y;
-    RenderData data;
+    short x;
+    short y;
+    char ch;
+    char color; /*ansi terminal 256-color code*/
 } RenderEvent;
 
 

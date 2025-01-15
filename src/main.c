@@ -4,13 +4,10 @@
 #define ALLOCATOR_IMPLEMENTATION
 #include "pimbs/src/allocator.h"
 
-#define MAP_IMPLEMENTATION
-#include "map.h"
+#include "level.h"
+#include "entity_implementations.c"
 
-#define ENTITY_IMPLEMENTATION
-#include "entity.h"
-
-#if   defined(BACKEND_NCURSES)
+#if defined(BACKEND_NCURSES)
     #include "ncurses_backend.c"
 #elif defined(BACKEND_ANSI)
     #include "ansi_backend.c"
@@ -19,6 +16,7 @@
     #include "ansi_backend.c"
 #endif /*BACKEND*/
 
+#if 0
 void render(Backend b, Map * m) {
     short x = 0;
     short y = 0;
@@ -98,23 +96,21 @@ void update(Backend b, Map * m) {
         }
     }
 }
+#endif
 
 int main(void) {
     Allocator a = libc_allocator();
     Backend b = backend_init(a);
-    MapCreationSettings opt = {0};
     Action input = ACTION_NIL;
-    Map m = map_create(a, &input, opt);
+    Level l = {0};
     short x = 0;
     short y = 0;
     RenderEvent cmd;
 
     do {
         /*update*/
-        update(b, &m);
 
         /*render*/
-        render(b, &m);
 
         /*get next input*/
         input = b.input(b);
@@ -122,7 +118,6 @@ int main(void) {
 
     } while(input != ACTION_QUIT);
 
-    map_deinit(a, m);
     b.deinit(b);
 
     return 0;

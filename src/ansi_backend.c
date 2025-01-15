@@ -1,6 +1,6 @@
 #include "backend.h"
+#include "level.h"
 #include "pimbs/src/allocator.h"
-#include "map.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -23,7 +23,7 @@
 
 typedef struct {
     RenderEvent prev;
-    RenderData last_frame[map_width][map_height];
+    RenderEvent last_frame[map_width][map_height];
     uint8_t display_i;
 } AnsiContext;
 
@@ -43,32 +43,33 @@ Action ansi_input(struct Backend self) {
 
 void ansi_render(struct Backend self, RenderEvent cmd) {
     AnsiContext * ctx = self.ctx;
-    RenderEvent prev = ctx->prev;
+    RenderEvent prev = ctx->prev; /*previous character drawn this frame*/
+    RenderEvent last_frame = ctx->last_frame[cmd.x][cmd.y];
     char buffer[256]; 
     int length;
 
     /*only update if data has changed since last frame*/
-    if(memcmp(&ctx->last_frame[cmd.x][cmd.y], &cmd.data, sizeof(RenderData)) == 0) {
+    if(last_frame.ch == cmd.ch && last_frame.color == cmd.color){
         return;
     }
 
-    ctx->last_frame[cmd.x][cmd.y] = cmd.data;
+    ctx->last_frame[cmd.x][cmd.y] = cmd;
         
     /*move cursor*/
-    if(prev.x != cmd.x - 1 || prev.y != cmd.y || prev.data.ch == 0) {
+    if(prev.x != cmd.x - 1 || prev.y != cmd.y || prev.ch == 0) {
         length = snprintf(buffer, sizeof(buffer), ANSI_ESC "%d;%dH", cmd.y, cmd.x);
         write(STDOUT_FILENO, buffer, length);
     }
 
 
     /*adjust color*/
-    if(prev.data.color != cmd.data.color || prev.data.ch == 0) {
-        length = snprintf(buffer, sizeof(buffer), ANSI_ESC "38;5;%dm", cmd.data.color);
+    if(prev.color != cmd.color || prev.ch == 0) {
+        length = snprintf(buffer, sizeof(buffer), ANSI_ESC "38;5;%dm", cmd.color);
         write(STDOUT_FILENO, buffer, length);
     }
 
     /*write ch*/
-    length = snprintf(buffer, sizeof(buffer), "%c", cmd.data.ch);
+    length = snprintf(buffer, sizeof(buffer), "%c", cmd.ch);
     write(STDOUT_FILENO, buffer, length);
 
     /*
@@ -92,7 +93,7 @@ void ansi_begin_rendering(struct Backend self) {
 
 void ansi_finish_rendering(struct Backend self) {
     AnsiContext * ctx = self.ctx;
-    ctx->prev.data.ch = 0;
+    ctx->prev.ch = 0;
     printf(GOTO_CURSOR_HOME);
 
     fflush(stdout);
@@ -109,7 +110,7 @@ void ansi_deinit(struct Backend self) {
 
 void ansi_display(struct Backend self, const char * fmt, ...) {
     AnsiContext * ctx = self.ctx;
-    ctx->prev.data.ch = 0;
+    ctx->prev.ch = 0;
 
     /*move cursor*/
     printf(ANSI_ESC "%d;%dH", ctx->display_i, map_width + 1);
