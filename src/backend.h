@@ -6,13 +6,13 @@
 
 /*data types*/
 typedef enum {
-    EVENT_NIL,
-    EVENT_WAIT,
-    EVENT_UP,
-    EVENT_DOWN,
-    EVENT_LEFT,
-    EVENT_RIGHT,
-    EVENT_QUIT
+    INPUT_NIL,
+    INPUT_WAIT,
+    INPUT_UP,
+    INPUT_DOWN,
+    INPUT_LEFT,
+    INPUT_RIGHT,
+    INPUT_QUIT
 } InputEvent;
 
 typedef struct {

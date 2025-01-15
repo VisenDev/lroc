@@ -23,9 +23,82 @@ int main(void) {
     Allocator a = libc_allocator();
     Backend b = backend_init(a);
     MapCreationSettings opt = {0};
-    Map m = map_create(a, opt);
-    InputEvent event;
+    InputEvent input;
+    Map m = map_create(a, &input, opt);
+    uint8_t x = 0;
+    uint8_t y = 0;
+    RenderEvent cmd;
 
+    do {
+
+        /*update*/
+        for(x = 0; x < map_width; ++x) {
+            for(y = 0; y < map_height; ++y) {
+                Cell * ptr = m.data[x][y];
+                Cell * prev = ptr;
+
+
+                while(ptr != NULL) {
+                    Command c = {0};
+                    if(ptr->updated) continue;
+                    ptr->updated = 1;
+
+                    c = ptr->value.update(ptr->value);
+
+                    switch(c.id) {
+                        case CMD_UP:
+                           map_move_entity(&m, ptr, x, y, x, y - 1);
+                           break;
+                        case CMD_DOWN:
+                           map_move_entity(&m, ptr, x, y, x, y + 1);
+                           break;
+                        case CMD_LEFT:
+                           map_move_entity(&m, ptr, x, y, x - 1, y);
+                           break;
+                        case CMD_RIGHT:
+                           map_move_entity(&m, ptr, x, y, x + 1, y);
+                           break;
+                        default: {}
+                    }
+
+                    /*ptr->value.order(ptr->value, a, c);*/
+
+                    prev = ptr;
+                    ptr = ptr->next;
+                }
+
+            }
+        }
+
+
+        /*render*/
+        b.begin_rendering(b);
+        for(x = 0; x < map_width; ++x) {
+            for(y = 0; y < map_height; ++y) {
+                Cell * ptr = m.data[x][y];
+                while(ptr != NULL) {
+                    RenderEvent cmd = {0};
+                    RenderData data = ptr->value.render(ptr->value);
+                    cmd.data = data;
+                    cmd.x = x;
+                    cmd.y = y;
+                    b.render(b, cmd);
+                    ptr = ptr->next;
+                }
+            }
+        }
+        b.finish_rendering(b);
+
+        /*get next input*/
+        input = b.input(b);
+
+    } while(input != INPUT_QUIT);
+
+    b.deinit(b);
+
+    return 0;
+}
+/*
     do {
         uint8_t x = 0;
         uint8_t y = 0;
@@ -57,9 +130,4 @@ int main(void) {
 
         b.finish_rendering(b);
         event = b.input(b);
-    } while (event != EVENT_QUIT);
-
-    b.deinit(b);
-
-    return 0;
-}
+    } while (event != EVENT_QUIT); */

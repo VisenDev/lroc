@@ -28,13 +28,13 @@ typedef struct {
 InputEvent ansi_input(struct Backend self) {
     const char ch = getchar();
     switch(ch) {
-        case 'j': return EVENT_DOWN;
-        case 'k': return EVENT_UP;
-        case 'h': return EVENT_LEFT;
-        case 'l': return EVENT_RIGHT;
-        case '.': return EVENT_WAIT;
-        case 'q': return EVENT_QUIT;
-        default: return EVENT_NIL;
+        case 'j': return INPUT_DOWN;
+        case 'k': return INPUT_UP;
+        case 'h': return INPUT_LEFT;
+        case 'l': return INPUT_RIGHT;
+        case '.': return INPUT_WAIT;
+        case 'q': return INPUT_QUIT;
+        default:  return INPUT_NIL;
     }
 }
 

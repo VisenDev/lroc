@@ -32,7 +32,7 @@ typedef struct {
 } Command;
 
 typedef RenderData (*EntityRenderFn)(struct Entity);
-typedef Command (*EntityUpdateFn)(struct Entity, Backend);
+typedef Command (*EntityUpdateFn)(struct Entity);
 typedef OrderResult (*EntityOrderFn)(struct Entity, Allocator, Command);
 
 typedef struct Entity {
@@ -45,6 +45,7 @@ typedef struct Entity {
 
 /*entity creation function*/
 Entity immovable_create(Allocator a, char ch, uint8_t color);
+Entity player_create(Allocator a, InputEvent*);
 
 #endif /*ENTITY_H*/
 
@@ -59,10 +60,9 @@ RenderData immovable_render(struct Entity self) {
     return ctx->render_data;
 }
 
-Command immovable_update(struct Entity self, Backend b) {
+Command immovable_update(struct Entity self) {
     Command result = {0};
     (void)self;
-    (void)b;
 
     result.id = CMD_NIL;
     return result;
@@ -95,29 +95,29 @@ Entity immovable_create(Allocator a, char ch, uint8_t color) {
 
 
 
-#if 0
 typedef struct {
-    uint8_t x;
-    uint8_t y;
     uint8_t health;
-    Backend b;
+    InputEvent * input;
 } PlayerContext;
 
-RenderEvent player_render(struct Entity self) {
+RenderData player_render(struct Entity self) {
     PlayerContext * ctx = self.ctx;
-    RenderEvent event = {0};
-    event.ch = '@';
-    event.x = ctx.x;
-    event.y = ctx.y;
-    event.color = 25;
-    return event;
+    RenderData data = {0};
+    data.ch = '@';
+    data.color = 25;
+    return data;
 }
 
 Command player_update(struct Entity self) {
     PlayerContext * ctx = self.ctx;
     Command result = {0};
-    (void)self;
-    (void)b;
+
+    switch(*ctx->input) {
+        case INPUT_UP;
+        
+        /*TODO Other cases*/
+
+    }
 
     result.id = CMD_WAIT;
     return result;
