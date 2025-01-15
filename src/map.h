@@ -28,7 +28,7 @@ typedef struct Cell {
     struct Cell * next;
 } Cell;
 
-Cell * cell_cons (Allocator a, Entity value, Cell * next) {
+Cell * cell_cons(Allocator a, Entity value, Cell * next) {
     Cell * self = a.alloc(a, sizeof(Cell)); 
     assert(self);
     self->next = next;
@@ -36,9 +36,37 @@ Cell * cell_cons (Allocator a, Entity value, Cell * next) {
     return self;
 }
 
+/*returns start*/
+Cell * cell_append(Cell * start, Cell * ptr) {
+    if(start == NULL) {
+        return ptr;
+    }
+    while(start->next != NULL) {
+        start = start->next;
+    }
+    start->next = ptr;
+    ptr->next = NULL;
+}
+
+Cell * cell_remove(Cell * prev, Cell * ptr) {
+    assert(ptr);
+    if(prev) {
+        ptr->next = ptr->next;
+    }
+    ptr->next = NULL;
+    return ptr;
+}
+
+/*IMPORTANT MACROS*/
+
 #define map_width 60
 #define map_height 24
 
+#define is_point_on_edge(x, y, width, height) (x == 0 || y == 0 || x == width - 1 || y == height -1)
+#define is_point_within_bounds(x, y, width, height) (x >= 0 && y >= 0 && x < width && y < height)
+#define is_point_on_map(x, y) is_point_within_bounds(x, y, map_width, map_height)
+
+/*TYPES*/
 
 typedef struct {
     uint16_t depth;
@@ -50,8 +78,6 @@ typedef struct {
     Cell * data[map_width][map_height];
 } Map;
 
-#define is_point_on_edge(x, y, width, height) (x == 0 || y == 0 || x == width - 1 || y == height -1)
-#define is_point_within_bounds(x, y, width, height) (x >= 0 && y <= 0 && x < width && y < height)
 
 typedef enum {
     UP,
@@ -63,10 +89,10 @@ typedef enum {
 void map_move_entity(
         Map * map,
         Cell * entity,
-        uint8_t old_x,
-        uint8_t old_y,
-        uint8_t new_x,
-        uint8_t new_y) {
+        short old_x,
+        short old_y,
+        short new_x,
+        short new_y) {
     Cell * ptr = map->data[old_x][old_y];
     Cell * prev = NULL;
     assert(entity != NULL);
@@ -102,8 +128,8 @@ void map_move_entity(
 
 Map map_create(Allocator a, Action * input, MapCreationSettings opt) {
     Map result = {0};
-    uint8_t x = 0;
-    uint8_t y = 0;
+    short x = 0;
+    short y = 0;
 
     for(x = 0; x < map_width; ++x) {
         for(y = 0; y < map_height; ++y) {
@@ -121,8 +147,8 @@ Map map_create(Allocator a, Action * input, MapCreationSettings opt) {
 }
 
 void map_deinit(Allocator a, Map map) {
-    uint8_t x = 0;
-    uint8_t y = 0;
+    short x = 0;
+    short y = 0;
 
     for(x = 0; x < map_width; ++x) {
         for(y = 0; y < map_height; ++y) {

@@ -20,8 +20,8 @@
 #endif /*BACKEND*/
 
 void render(Backend b, Map * m) {
-    uint8_t x = 0;
-    uint8_t y = 0;
+    short x = 0;
+    short y = 0;
     static int turn = 0;
 
     b.begin_rendering(b);
@@ -45,53 +45,56 @@ void render(Backend b, Map * m) {
     b.finish_rendering(b);
 }
 
+void update_cell(Backend b, Map * m, short x, short y) {
+    Cell * ptr = m->data[x][y];
+    Cell * prev = NULL;
+
+    while(ptr != NULL) {
+        Action action = {0};
+        action = ptr->value.update(ptr->value);
+
+        switch(action) {
+            case ACTION_UP:
+                if(is_point_on_map(x, y - 1)) {
+                    b.display(b, "Moving %p up", ptr);
+                    m->data[x][y - 1] = cell_append(m->data[x][y - 1], cell_remove(prev, ptr)); 
+                }
+                break;
+            case ACTION_DOWN:
+                if(is_point_on_map(x, y + 1)) {
+                    b.display(b, "Moving %p down", ptr);
+                    m->data[x][y + 1] = cell_append(m->data[x][y + 1], cell_remove(prev, ptr)); 
+                }
+                break;
+            case ACTION_LEFT:
+                if(is_point_on_map(x - 1, y)) {
+                    b.display(b, "Moving %p left", ptr);
+                    m->data[x - 1][y] = cell_append(m->data[x - 1][y], cell_remove(prev, ptr)); 
+                }
+                break;
+            case ACTION_RIGHT:
+                if(is_point_on_map(x + 1, y)) {
+                    b.display(b, "Moving %p right", ptr);
+                    m->data[x + 1][y] = cell_append(m->data[x + 1][y], cell_remove(prev, ptr)); 
+                }
+                break;
+            default: {}
+        }
+
+        /*ptr->value.order(ptr->value, a, c);*/
+
+        prev = ptr;
+        ptr = ptr->next;
+
+    }
+}
+
 void update(Backend b, Map * m) {
-    uint8_t x = 0;
-    uint8_t y = 0;
+    short x = 0;
+    short y = 0;
     for(x = 0; x < map_width; ++x) {
         for(y = 0; y < map_height; ++y) {
-            Cell * ptr = m->data[x][y];
-            Cell * prev = NULL;
-
-            while(ptr != NULL) {
-                Action action = {0};
-                action = ptr->value.update(ptr->value);
-
-                if(ptr == m->player) {
-                    fprintf(stderr, "updating player %p with action %d\n", ptr, action);
-                } else {
-                    fprintf(stderr, "updating entity %p with action %d\n", ptr, action);
-                }
-
-                switch(action) {
-                    case ACTION_UP:
-                        b.display(b, "Moving up   ");
-                        /*map_move_entity(m, ptr, x, y, x, y - 1);*/
-                        if(prev) {
-                            prev->next = ptr->next;
-                        }
-                        break;
-                    case ACTION_DOWN:
-                        b.display(b, "Moving down");
-                        map_move_entity(m, ptr, x, y, x, y + 1);
-                        break;
-                    case ACTION_LEFT:
-                        b.display(b, "Moving left");
-                        map_move_entity(m, ptr, x, y, x - 1, y);
-                        break;
-                    case ACTION_RIGHT:
-                        b.display(b, "Moving right");
-                        map_move_entity(m, ptr, x, y, x + 1, y);
-                        break;
-                    default: {}
-                }
-
-                    /*ptr->value.order(ptr->value, a, c);*/
-
-                prev = ptr;
-                ptr = ptr->next;
-            }
-
+            update_cell(b, m, x, y);
         }
     }
 }
@@ -102,8 +105,8 @@ int main(void) {
     MapCreationSettings opt = {0};
     Action input = ACTION_NIL;
     Map m = map_create(a, &input, opt);
-    uint8_t x = 0;
-    uint8_t y = 0;
+    short x = 0;
+    short y = 0;
     RenderEvent cmd;
 
     do {
@@ -119,14 +122,15 @@ int main(void) {
 
     } while(input != ACTION_QUIT);
 
+    map_deinit(a, m);
     b.deinit(b);
 
     return 0;
 }
 /*
    do {
-   uint8_t x = 0;
-   uint8_t y = 0;
+   short x = 0;
+   short y = 0;
    RenderEvent cmd;
 
    b.begin_rendering(b);
