@@ -68,6 +68,9 @@ typedef struct Level {
     Allocator a;
     Backend b;
 
+    /*mobility bitmap*/
+    Bitmap2D(map_width, map_height) map;
+
     /*entities*/
     Entity e[entity_cap];
     Bitmap(entity_cap) entity_bitmap;
