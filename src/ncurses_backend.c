@@ -1,5 +1,4 @@
 #include "backend.h"
-#include "map.h"
 #include <ncurses.h>
 #include <stdlib.h>
 #include "pimbs/src/allocator.h"

@@ -4,7 +4,9 @@
 #define ALLOCATOR_IMPLEMENTATION
 #include "pimbs/src/allocator.h"
 
+#define LEVEL_IMPLEMENTATION
 #include "level.h"
+
 #include "entity_implementations.c"
 
 #if defined(BACKEND_NCURSES)
@@ -102,15 +104,25 @@ int main(void) {
     Allocator a = libc_allocator();
     Backend b = backend_init(a);
     Action input = ACTION_NIL;
-    Level l = {0};
-    short x = 0;
-    short y = 0;
-    RenderEvent cmd;
+    Level l = level_create(a, b, &input);
+    int i = 0;
 
     do {
         /*update*/
+        for(int i = 0; i < entity_cap; ++i) {
+            if(l.entity_bitmap[i]) {
+                l.e[i].update(l.e[i], l);
+            }
+        }
 
         /*render*/
+        b.begin_rendering(b);
+        for(int i = 0; i < entity_cap; ++i) {
+            if(l.entity_bitmap[i]) {
+                l.e[i].render(l.e[i], l);
+            }
+        }
+        b.finish_rendering(b);
 
         /*get next input*/
         input = b.input(b);

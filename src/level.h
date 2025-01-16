@@ -51,8 +51,9 @@ typedef struct Event {
 typedef struct Level {
     Allocator a;
     Backend b;
+    Entity e[entity_cap];
+
     int entity_bitmap[entity_cap];
-    Entity entity[entity_cap];
     Entity * location_cache[map_width][map_height][cache_cap];
     Entity * listeners[num_events][entity_cap];
 } Level;
@@ -62,8 +63,56 @@ typedef struct Level {
 #define is_point_on_map(x, y) is_point_within_bounds(x, y, map_width, map_height)
 
 /*entity creation functions*/
-Entity immovable_create(Level l, short x, short y, char ch, char color);
+Entity immovable_create(Level l, short x, short y, char ch, unsigned char color);
 Entity decoration_create(Level, char ch, uint8_t color);
 Entity player_create(Level, Action*);
 
 #endif /*LEVEL_H*/
+
+#ifdef LEVEL_IMPLEMENTATION
+
+int find_available_entity(Level l) {
+    int i = 0;
+    for(i = 0; i < entity_cap; ++i) {
+        if(!l.entity_bitmap[i]) {
+            return i;
+        }
+    }
+    /*ran out of entities*/
+    abort();
+}
+
+Level level_create(Allocator a, Backend b, Action * input) {
+    Level l = {0};
+    short x = 0;
+    short y = 0;
+    l.a = a;
+    l.b = b;
+
+    /*populate entities*/
+    for(x = 0; x < map_width; ++x) {
+        for(y = 0; y < map_height; ++y) {
+            if(is_point_on_edge(x, y, map_width, map_height)){
+                int i = find_available_entity(l);
+                l.entity_bitmap[i] = 1;
+                l.e[i] = immovable_create(l, x, y, '#', 243);
+            }
+        }
+    }
+
+    /*spawn player*/
+    {
+        int i = find_available_entity(l);
+        l.entity_bitmap[i] = 1;
+        l.e[i] = player_create(l, input);
+    }
+    
+    return l;
+}
+
+/*TODO create level_deinit function*/
+
+
+
+#endif /*LEVEL_IMPLEMENTATION*/
+#undef LEVEL_IMPLEMENTATION

@@ -26,7 +26,7 @@ void immovable_notify(struct Entity self, struct Level l, struct Event event) {
 
 }
 
-Entity immovable_create(Level l, short x, short y, char ch, char color) {
+Entity immovable_create(Level l, short x, short y, char ch, unsigned char color) {
     Entity self = {0};
     ImmovableContext * ctx = l.a.alloc(l.a, sizeof(ImmovableContext));
     assert(ctx);

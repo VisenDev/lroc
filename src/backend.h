@@ -19,7 +19,7 @@ typedef struct {
     short x;
     short y;
     char ch;
-    char color; /*ansi terminal 256-color code*/
+    unsigned char color; /*ansi terminal 256-color code*/
 } RenderEvent;
 
 
