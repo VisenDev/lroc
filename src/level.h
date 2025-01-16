@@ -53,14 +53,6 @@ typedef struct {
     Entity * listener;
 } EventListener;
 
-typedef struct EntityId {
-    int i;
-} EntityId;
-
-typedef struct EventId{
-    int i;
-} EventId;
-
 /*Level*/
 typedef struct Level {
 
@@ -74,18 +66,17 @@ typedef struct Level {
     /*entities*/
     Entity e[entity_cap];
     Bitmap(entity_cap) entity_bitmap;
-    EntityId entity_cache[map_width][map_height][cache_cap]; /*for caching entity locations*/
+    long entity_cache[map_width][map_height][cache_cap]; /*for caching entity locations*/
 
     /*event queue*/
     Bitmap(event_cap) event_bitmap;
     Event queue[event_cap];
-    EventId event_cache[map_width][map_height][cache_cap]; /*for caching event locations*/
+    long event_cache[map_width][map_height][cache_cap]; /*for caching event locations*/
 
     /*
     Entity * location_cache[map_width][map_height][cache_cap];
     EventListener events[num_events][entity_cap];
     */
-#endif
 } Level;
 
 #define is_point_on_edge(x, y, width, height) (x == 0 || y == 0 || x == width - 1 || y == height -1)

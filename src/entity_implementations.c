@@ -22,8 +22,7 @@ void immovable_destroy(struct Entity self, struct Level l) {
 
 
 void immovable_notify(struct Entity self, struct Level l, struct Event event) {
-
-
+    
 }
 
 Entity immovable_create(Level l, short x, short y, char ch, unsigned char color) {
