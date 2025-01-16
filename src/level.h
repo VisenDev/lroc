@@ -3,11 +3,13 @@
 
 #include "pimbs/src/allocator.h"
 #include "backend.h"
+#include "bitmap.h"
 
 #define map_width 60
 #define map_height 22
 #define entity_cap 4096
 #define cache_cap 8
+#define event_cap 4096
 
 
 struct Entity;
@@ -47,15 +49,40 @@ typedef struct Event {
     Entity * sender;
 } Event;
 
+typedef struct {
+    Entity * listener;
+} EventListener;
+
+typedef struct EntityId {
+    int i;
+} EntityId;
+
+typedef struct EventId{
+    int i;
+} EventId;
+
 /*Level*/
 typedef struct Level {
+
+    /*useful interfaces*/
     Allocator a;
     Backend b;
-    Entity e[entity_cap];
 
-    int entity_bitmap[entity_cap];
+    /*entities*/
+    Entity e[entity_cap];
+    Bitmap(entity_cap) entity_bitmap;
+    EntityId entity_cache[map_width][map_height][cache_cap]; /*for caching entity locations*/
+
+    /*event queue*/
+    Bitmap(event_cap) event_bitmap;
+    Event queue[event_cap];
+    EventId event_cache[map_width][map_height][cache_cap]; /*for caching event locations*/
+
+    /*
     Entity * location_cache[map_width][map_height][cache_cap];
-    Entity * listeners[num_events][entity_cap];
+    EventListener events[num_events][entity_cap];
+    */
+#endif
 } Level;
 
 #define is_point_on_edge(x, y, width, height) (x == 0 || y == 0 || x == width - 1 || y == height -1)
@@ -74,7 +101,7 @@ Entity player_create(Level, Action*);
 int find_available_entity(Level l) {
     int i = 0;
     for(i = 0; i < entity_cap; ++i) {
-        if(!l.entity_bitmap[i]) {
+        if(get_bit(l.entity_bitmap, i) == 0) {
             return i;
         }
     }
@@ -94,7 +121,7 @@ Level level_create(Allocator a, Backend b, Action * input) {
         for(y = 0; y < map_height; ++y) {
             if(is_point_on_edge(x, y, map_width, map_height)){
                 int i = find_available_entity(l);
-                l.entity_bitmap[i] = 1;
+                set_bit(l.entity_bitmap, i);
                 l.e[i] = immovable_create(l, x, y, '#', 243);
             }
         }
@@ -103,7 +130,7 @@ Level level_create(Allocator a, Backend b, Action * input) {
     /*spawn player*/
     {
         int i = find_available_entity(l);
-        l.entity_bitmap[i] = 1;
+        set_bit(l.entity_bitmap, i);
         l.e[i] = player_create(l, input);
     }
     
