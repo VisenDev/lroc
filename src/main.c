@@ -100,8 +100,6 @@ void update(Backend b, Map * m) {
 }
 #endif
 
-#include "bitmap.h"
-
 int main(void) {
     Allocator a = libc_allocator();
     Backend b = backend_init(a);
@@ -113,7 +111,7 @@ int main(void) {
         /*update*/
         for(int i = 0; i < entity_cap; ++i) {
             if(get_bit(l.entity_bitmap, i)) {
-                l.e[i].update(l.e[i], l);
+                l.e[i].update(l.e[i], &l);
             }
         }
 
@@ -121,7 +119,7 @@ int main(void) {
         b.begin_rendering(b);
         for(int i = 0; i < entity_cap; ++i) {
             if(get_bit(l.entity_bitmap, i)) {
-                l.e[i].render(l.e[i], l);
+                l.e[i].render(l.e[i], &l);
             }
         }
         b.finish_rendering(b);

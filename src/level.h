@@ -1,9 +1,10 @@
 #ifndef LEVEL_H
 #define LEVEL_H
 
+#include <stdlib.h>
 #include "pimbs/src/allocator.h"
 #include "backend.h"
-#include "bitmap.h"
+#include "pimbs/src/bitmap.h"
 
 #define map_width 60
 #define map_height 22
@@ -18,10 +19,10 @@ struct Level;
 
 
 /*Entity*/
-typedef void (*EntityRenderFn) (struct Entity, struct Level);
-typedef void (*EntityUpdateFn) (struct Entity, struct Level);
-typedef void (*EntityDestroyFn)(struct Entity, struct Level);
-typedef void (*EntityNotifyFn) (struct Entity, struct Level, struct Event);
+typedef void (*EntityRenderFn) (struct Entity, struct Level *);
+typedef void (*EntityUpdateFn) (struct Entity, struct Level *);
+typedef void (*EntityDestroyFn)(struct Entity, struct Level *);
+typedef void (*EntityNotifyFn) (struct Entity, struct Level *, struct Event);
 
 typedef struct Entity {
     void * ctx;
@@ -44,7 +45,7 @@ typedef enum {
 } EventId;
 
 typedef struct Event {
-    EventId id;
+    EventId type;
     int value;
     Entity * sender;
 } Event;
@@ -52,6 +53,8 @@ typedef struct Event {
 typedef struct {
     Entity * listener;
 } EventListener;
+
+typedef long Id;
 
 /*Level*/
 typedef struct Level {
@@ -66,12 +69,12 @@ typedef struct Level {
     /*entities*/
     Entity e[entity_cap];
     Bitmap(entity_cap) entity_bitmap;
-    long entity_cache[map_width][map_height][cache_cap]; /*for caching entity locations*/
+    Id entity_cache[map_width][map_height][cache_cap]; /*for caching entity locations*/
 
     /*event queue*/
     Bitmap(event_cap) event_bitmap;
     Event queue[event_cap];
-    long event_cache[map_width][map_height][cache_cap]; /*for caching event locations*/
+    Id event_cache[map_width][map_height][cache_cap]; /*for caching event locations*/
 
     /*
     Entity * location_cache[map_width][map_height][cache_cap];
@@ -79,14 +82,21 @@ typedef struct Level {
     */
 } Level;
 
+
 #define is_point_on_edge(x, y, width, height) (x == 0 || y == 0 || x == width - 1 || y == height -1)
 #define is_point_within_bounds(x, y, width, height) (x >= 0 && y >= 0 && x < width && y < height)
 #define is_point_on_map(x, y) is_point_within_bounds(x, y, map_width, map_height)
 
+
+static int valid_destination(Level * l, short x, short y) {
+    return is_point_on_map(x, y) && !get_bit_2d(l->map, x, y);
+}
+
 /*entity creation functions*/
-Entity immovable_create(Level l, short x, short y, char ch, unsigned char color);
-Entity decoration_create(Level, char ch, uint8_t color);
+Entity decoration_create(Level l, short x, short y, char ch, unsigned char color);
+/*Entity decoration_create(Level, char ch, uint8_t color);*/
 Entity player_create(Level, Action*);
+Entity rat_create(Level l, short, short);
 
 #endif /*LEVEL_H*/
 
@@ -116,7 +126,19 @@ Level level_create(Allocator a, Backend b, Action * input) {
             if(is_point_on_edge(x, y, map_width, map_height)){
                 int i = find_available_entity(l);
                 set_bit(l.entity_bitmap, i);
-                l.e[i] = immovable_create(l, x, y, '#', 243);
+                l.e[i] = decoration_create(l, x, y, '#', 243);
+                set_bit_2d(l.map, x, y);
+            } else {
+                int i = find_available_entity(l);
+                set_bit(l.entity_bitmap, i);
+                l.e[i] = decoration_create(l, x, y, '.', 138);
+                unset_bit_2d(l.map, x, y);
+
+                if(!(rand() % 25)) {
+                    i = find_available_entity(l); 
+                    set_bit(l.entity_bitmap, i);
+                    l.e[i] = rat_create(l, x, y);
+                }
             }
         }
     }
