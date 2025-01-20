@@ -1,0 +1,42 @@
+=================================================================
+==68225==ERROR: AddressSanitizer: global-buffer-overflow on address 0x00010e27aa9a at pc 0x00010e26bbb1 bp 0x7ff7b1ca1170 sp 0x7ff7b1ca1168
+READ of size 1 at 0x00010e27aa9a thread T0
+    #0 0x10e26bbb0 in set_bit_internal bitmap.h:31
+    #1 0x10e26c709 in create_scene scene.c:125
+    #2 0x10e26cb82 in main scene.c:144
+    #3 0x7ff81095f30f  (<unknown module>)
+
+0x00010e27aa9a is located 2 bytes to the right of global variable 's' defined in 'scene.c:143:18' (0x10e2730a0) of size 31224
+SUMMARY: AddressSanitizer: global-buffer-overflow bitmap.h:31 in set_bit_internal
+Shadow bytes around the buggy address:
+  0x100021c4f500: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+  0x100021c4f510: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+  0x100021c4f520: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+  0x100021c4f530: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+  0x100021c4f540: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+=>0x100021c4f550: 00 00 00[f9]f9 f9 f9 f9 f9 f9 f9 f9 f9 f9 f9 f9
+  0x100021c4f560: f9 f9 f9 f9 f9 f9 f9 f9 f9 f9 f9 f9 f9 f9 f9 f9
+  0x100021c4f570: f9 f9 f9 f9 f9 f9 f9 f9 f9 f9 f9 f9 f9 f9 f9 f9
+  0x100021c4f580: f9 f9 f9 f9 f9 f9 f9 f9 f9 f9 f9 f9 f9 f9 f9 f9
+  0x100021c4f590: f9 f9 f9 f9 f9 f9 f9 f9 f9 f9 f9 f9 f9 f9 f9 f9
+  0x100021c4f5a0: f9 f9 f9 f9 f9 f9 f9 f9 f9 f9 f9 f9 f9 f9 f9 f9
+Shadow byte legend (one shadow byte represents 8 application bytes):
+  Addressable:           00
+  Partially addressable: 01 02 03 04 05 06 07 
+  Heap left redzone:       fa
+  Freed heap region:       fd
+  Stack left redzone:      f1
+  Stack mid redzone:       f2
+  Stack right redzone:     f3
+  Stack after return:      f5
+  Stack use after scope:   f8
+  Global redzone:          f9
+  Global init order:       f6
+  Poisoned by user:        f7
+  Container overflow:      fc
+  Array cookie:            ac
+  Intra object redzone:    bb
+  ASan internal:           fe
+  Left alloca redzone:     ca
+  Right alloca redzone:    cb
+==68225==ABORTING

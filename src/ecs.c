@@ -1,6 +1,8 @@
-
 #include "backend.h"
-
+#include <stdbool.h>
+#include <assert.h>
+#include <stddef.h>
+#include <limits.h>
 
 #define C_X (1<<0)
 #define C_Y (1<<1)
@@ -9,20 +11,35 @@
 #define C_HEALTH (1<<4)
 #define C_PLAYER (1<<5)
 #define C_FOREGROUND (1<<6)
+
 #define NUM_COMPONENTS 7
 
-
 #define entity_cap 1024
-
 
 typedef struct {
     short i;
 } Id;
 
 typedef struct {
-    short comp[NUM_COMPONENTS][entity_cap];
-    int bitmap[NUM_COMPONENTS][entity_cap];
+    bool entities[entity_cap];
+    short component[NUM_COMPONENTS][entity_cap];
+    bool component_bitmap[NUM_COMPONENTS][entity_cap];
 } Scene;
+
+long component_to_index(long component) {
+    int i = 0;
+    for(i = 0; i < sizeof(long) * CHAR_BIT; ++i) {
+        if(component & (1<<i)) {
+            return i;        
+        }
+    }
+    return -1;
+}
+
+short get_component(Scene * self, Id entity, long component) {
+    long index =  component
+}
+
 
 int next(Scene * const self, Id * out, long components) {
     return 0;
