@@ -1,4 +1,18 @@
-(macro struct [name fields]
+(macro c-raw [indent & rest]
+  (assert-compile (= (type indent) "number")
+                  "c-raw indentation level must be a number")
+  (each [i elem (ipairs rest)]
+    (case (type elem)
+      "string" (tset rest i elem)
+      _ (tset rest i (tostring elem))
+       ))
+    `(do
+       (for [_# 1 ,(- indent 1) 1]
+           (io.write "    "))
+       (io.write (.. (table.unpack ,rest)))
+       ))
+
+(macro c-struct [name fields]
   (var result "")
   (each [_ field (ipairs fields)]
     (set result (.. result "    "))
@@ -6,24 +20,65 @@
         (set result
              (.. result " " (tostring ident))))
     (set result (.. result ";\n")))
-  `(print (.. "struct " ,(tostring name) "\n{\n" ,result "}")))
+  `(c-raw 1 "struct " ,name "\n{\n" ,result "}\n\n"))
 
-(macro c-assign [sexpr]
-  (assert-repl (= (. sexpr 1) `assign))
-  `(print "assigned")
-  )
+(macro c-assign [name value]
+  `(do
+     (c-raw 1 ,name " = ")
+     (c-expr ,value)
+     (c-raw 1 ";\n")
+  ))
+
+(macro c-expr [sexpr]
+    (fn exclude-first [tbl]
+      (var result {})
+      (each [index elem (ipairs tbl)]
+        (when (not (= index 1))
+          (tset result (- index 1) elem)))
+      result)
+  (case (tostring (. sexpr 1))
+    _ `(c-raw
+         1 ;indent
+         ,(. sexpr 1) ;print function name
+         "(" ;print open parens
+         ,(table.unpack (exclude-first sexpr))
+          ");\n" ;print end parens
+          )))
 
 
-(macro c-block [...]
-  (var result {})
-  (each [index sexpr (ipairs ...)]
-    (when (= (. sexpr 1) `printf)
-      (tset result index `(print "printf")))
-    )
-  result
-  )
+(macro c-block [indent & rest]
+    (fn exclude-first [tbl]
+      (var result {})
+      (each [index elem (ipairs tbl)]
+        (when (not (= index 1))
+          (tset result (- index 1) elem)))
+      result)
+  (each [index sexpr (ipairs rest)]
+    (local block-indent (+ indent 1))
+    (tset rest index
+      (case (tostring (. sexpr 1))
+        "c-assign" `(do (c-raw ,block-indent) ,sexpr)
+        "c-block"  sexpr
+        _ `(c-raw
+             ,(+ 1 indent) ;indent
+             ,(. sexpr 1) ;print function name
+             "(" ;print open parens
+             ,(table.unpack (exclude-first sexpr))
+              ");\n" ;print end parens
+              )
+  )))
+  `(do (c-raw ,indent "{\n")
+     ,rest
+     (c-raw ,indent "}\n")
+     ))
 
-(macro function [return-type name params ...]
+
+;      (tset result index `(c-assign ,sexpr)))
+;      (= (. sexpr 1) `
+;    )
+;  result
+
+(macro c-function [return-type name params ...]
   (var param-string "")
   (each [index param (ipairs params)]
     (when (not (= index 1)) (set param-string (.. param-string ",")))
@@ -34,23 +89,27 @@
      (print (..
        ,(tostring return-type) " "
        ,(tostring name) "("
-       ,param-string ") {\n"))
-     (c-block (,...))
-     (print "\n}\n")
+       ,param-string ")"))
+     (c-block 1 ,...)
      ))
 
 
-(struct vector2 ((float x) (float y)))
-(struct vector3
+(c-struct vector2 ((float x) (float y)))
+(c-struct vector3
   ((float x)
    (float y)
    (float z)))
 
 
 
-(function int main ((int argc) (char ** argv))
-          (printf "hi")
-          (printf "hi")
-          (printf "hello")
-          )
+(c-function int main ((int argc) (char ** argv))
+  (printf "hi")
+  (printf "hi")
+  (printf "hello")
+  (c-assign asdf (+ 1 2))
+  (c-block 2
+    (printf "hello world")
+    (printf "hello john")
+    )
+)
 
