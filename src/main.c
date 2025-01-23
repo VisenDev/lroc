@@ -7,6 +7,8 @@
 #include "backend.h"
 #include "pimbs/src/static_vec.h"
 
+
+
 /*macros*/
 #define entity_cap 4096
 #define map_width 60
@@ -16,6 +18,17 @@
 #define is_point_on_edge(x, y, width, height) (x == 0 || y == 0 || x == width - 1 || y == height -1)
 #define is_point_within_bounds(x, y, width, height) (x >= 0 && y >= 0 && x < width && y < height)
 #define is_point_on_map(x, y) is_point_within_bounds(x, y, map_width, map_height)
+
+
+/*backend*/
+#if defined(BACKEND_NCURSES)
+    #include "ncurses_backend.c"
+#elif defined(BACKEND_ANSI)
+    #include "ansi_backend.c"
+#else
+    #warning "No backend specified, defaulting to ANSI"
+    #include "ansi_backend.c"
+#endif /*BACKEND*/
 
 
 typedef enum {
@@ -184,8 +197,6 @@ Scene create_scene(void) {
 
     return result;
 }
-
-#include "ncurses_backend.c"
 
 /* entry point */
 int main(void) {
