@@ -3,9 +3,6 @@
 #include <stdlib.h>
 #include "pimbs/src/allocator.h"
 
-#define map_width 60
-#define map_height 22
-
 typedef struct {
     WINDOW* front;
     WINDOW* back;

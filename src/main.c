@@ -207,8 +207,6 @@ int main(void) {
 
     while(r.input != ACTION_QUIT) {
         unsigned int i = 0;
-        unsigned int j = 0;
-
 
         /*update*/
         for(i = 1; i < entity_cap; ++i) {

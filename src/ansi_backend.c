@@ -56,7 +56,7 @@ void ansi_render(struct Backend self, RenderEvent cmd) {
         
     /*move cursor*/
     if(prev.x != cmd.x - 1 || prev.y != cmd.y || prev.ch == 0) {
-        length = snprintf(buffer, sizeof(buffer), ANSI_ESC "%d;%dH", cmd.y, cmd.x);
+        length = snprintf(buffer, sizeof(buffer), ANSI_ESC "%d;%dH", cmd.y + 1, cmd.x + 1);
         write(STDOUT_FILENO, buffer, length);
     }
 
@@ -79,7 +79,7 @@ void ansi_render(struct Backend self, RenderEvent cmd) {
 }
 
 
-#define GOTO_CURSOR_HOME ANSI_GOTO("0", "24")
+#define GOTO_CURSOR_HOME ANSI_GOTO("0", "23")
 
 void ansi_begin_rendering(struct Backend self) {
     AnsiContext * ctx = self.ctx;
