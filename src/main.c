@@ -5,6 +5,7 @@
 #define USE_STDLIB 1
 #include "pimbs/src/allocator.h"
 #include "backend.h"
+#include "pimbs/src/static_vec.h"
 
 /*macros*/
 #define entity_cap 4096
@@ -44,7 +45,7 @@ const Id null_id = {0};
 typedef struct {
     bool entity_used[entity_cap];
     Entity entity[entity_cap];
-    Id entity_location_cache[map_width][map_height][cache_size];
+    StaticVec(Id, cache_size) entity_location_cache[map_width][map_height];
 } Scene;
 
 typedef struct {
@@ -80,7 +81,16 @@ Entity * get_entity(Scene * s, Id id) {
 
 /*entity implementations*/
 static int valid_destination(Scene * const s, short x, short y) {
-    return is_point_on_map(x, y) && ;
+    unsigned long i = 0;
+    int movement_blocked = 0;
+    for(i = 0; i < s->entity_location_cache[x][y].len; ++i) {
+        Id id = svec_get(s->entity_location_cache[x][y], i);
+        const Entity * entity = get_entity(s, id);
+        if(entity->block_movement){
+            movement_blocked = 1;
+        }
+    }
+    return is_point_on_map(x, y) && (movement_blocked == false);
 }
 
 
@@ -90,22 +100,22 @@ void update_player(Scene * s, RunTime * r, Id id) {
     const Action action = r->input;
     switch(action) {
         case ACTION_UP: 
-            if(valid_destination(entity->x, entity->y - 1)) {
+            if(valid_destination(s, entity->x, entity->y - 1)) {
                 entity->y -= 1;
             }
             break;
         case ACTION_DOWN: 
-            if(valid_destination(entity->x, entity->y + 1)) {
+            if(valid_destination(s, entity->x, entity->y + 1)) {
                 entity->y += 1;
             }
             break;
         case ACTION_LEFT: 
-            if(valid_destination(entity->x - 1, entity->y)) {
+            if(valid_destination(s, entity->x - 1, entity->y)) {
                 entity->x -= 1;
             }
             break;
         case ACTION_RIGHT: 
-            if(valid_destination(entity->x + 1, entity->y)) {
+            if(valid_destination(s, entity->x + 1, entity->y)) {
                 entity->x += 1;
             }
             break;
@@ -188,33 +198,31 @@ int main(void) {
         unsigned int i = 0;
         unsigned int j = 0;
 
-        /*cache positions*/
-        memset(&s.entity_location_cache, 0,
-                map_width * map_height * cache_size * sizeof(Id));
-        for(i = 0; i < entity_cap; ++i) {
-            /*todo add logic to search cache for available slot*/
-            for(j = 0; j < cache_size; ++j) { 
-                const Id id = {i};
-                if(s.entity_used[i]) {
-                    Entity * entity = get_entity(&s, id);
-                    short x = entity->x;
-                    short y = entity->y;
-                    s.entity_location_cache[x][y][j] = id;
-                }
-            }
-        }
 
         /*update*/
-        for(i = 0; i < entity_cap; ++i) {
+        for(i = 1; i < entity_cap; ++i) {
             const Id id = {i};
             if(s.entity_used[i]) {
                 update(&s, &r, id);
             }
         }
 
+        /*cache positions*/
+        memset(&s.entity_location_cache, 0, sizeof(s.entity_location_cache));
+        
+        for(i = 1; i < entity_cap; ++i) {
+            const Id id = {i};
+            if(s.entity_used[i]) {
+                Entity * entity = get_entity(&s, id);
+                short x = entity->x;
+                short y = entity->y;
+                svec_append(s.entity_location_cache[x][y], id);
+            }
+        }
+
         /*render*/
         r.b.begin_rendering(r.b);
-        for(i = 0; i < entity_cap; ++i) {
+        for(i = 1; i < entity_cap; ++i) {
             const Id id = {i};
             if(s.entity_used[i]) {
                 render(&s, &r, id);
