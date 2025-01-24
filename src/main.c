@@ -8,6 +8,9 @@
 #include "pimbs/src/static_vec.h"
 
 
+/*debug options*/
+
+/*#define DEBUG_PATHFINDING*/
 
 /*macros*/
 #define entity_cap 4096
@@ -43,8 +46,6 @@ typedef struct Id {
     short i;
 } Id;
 const Id null_id = {0};
-
-
 
 
 typedef struct Point {
@@ -87,7 +88,12 @@ int pathnode_compare(const void * lhs, const void * rhs) {
     return a_distance < b_distance;
 }
 
-Path pathfind_to(struct Scene * s, struct RunTime * r, short x, short y, short destx, short desty) {
+typedef enum {
+    PATH_DIRECT,
+    PATH_BACKTRACK
+} PathfindType;
+
+Path pathfind_to(struct Scene * s, struct RunTime * r, PathfindType type, short x, short y, short destx, short desty) {
     Path empty_path = {0};
     const unsigned int max_iterations = 1024;
     unsigned int iterations = 0;
@@ -99,6 +105,7 @@ Path pathfind_to(struct Scene * s, struct RunTime * r, short x, short y, short d
     Point finish = {destx, desty};
     PathNode first_node = {empty_path, start, finish};
     svec_append(queue, first_node);
+    (void)r;
 
     for(iterations = 0; iterations < max_iterations; ++iterations) {
         if(queue.len == 0) break;
@@ -118,12 +125,15 @@ Path pathfind_to(struct Scene * s, struct RunTime * r, short x, short y, short d
 
             /*check if destination has been found*/
             if(new_location.x == destx && new_location.y == desty) {
-                /*reverse the path*/
-                unsigned int i = 0;
-                for(i = 0; i < new_path.len / 2; ++i) {
-                    Point tmp = new_path.items[i];
-                    svec_set(new_path, new_path.len - 1 - i, tmp);
-                    svec_set(new_path, i, svec_get(new_path, new_path.len - 1 -i));
+
+                if(type == PATH_BACKTRACK) {
+                    /*reverse the path*/
+                    unsigned int i = 0;
+                    for(i = 0; i < new_path.len / 2; ++i) {
+                        Point tmp = new_path.items[i];
+                        svec_set(new_path, new_path.len - 1 - i, tmp);
+                        svec_set(new_path, i, svec_get(new_path, new_path.len - 1 -i));
+                    }
                 }
                 return new_path;
             }
@@ -289,11 +299,14 @@ void update_basic_melee(Scene * s, RunTime * r, Id id) {
     Entity * entity = get_entity(s, id);
     Entity * player = NULL;
     if((player = get_player(s))) {
-        if(entity->path.len == 0) {
-            entity->path = pathfind_to(s, r, entity->x, entity->y, player->x, player->y);
+        if(entity->path.len < 5) {
+            entity->path = pathfind_to(s, r, PATH_DIRECT, entity->x, entity->y, player->x, player->y);
         }
         if(entity->path.len != 0) {
-            Point top = svec_pop(entity->path);
+            Point top = svec_get(entity->path, 0);
+
+            svec_remove(entity->path, 0);
+
             if(top.x != entity->x) {
                 move_entity(s, entity, top.x < entity->x ? ACTION_LEFT : ACTION_RIGHT);
             } else if(top.y != entity->y) {
@@ -309,8 +322,22 @@ void update_basic_melee(Scene * s, RunTime * r, Id id) {
 /*generic*/
 void render(Scene * s, RunTime * r, Id id) {
     const Entity * entity = get_entity(s, id);
-    const RenderEvent event = {entity->x, entity->y, entity->ch, entity->color};
+    RenderEvent event = {entity->x, entity->y, entity->ch, entity->color};
     r->b.render(r->b, event);
+
+#ifdef DEBUG_PATHFINDING
+    {
+        unsigned int i = 0;
+        for(i = 0; i < entity->path.len; ++i) {
+            const Point path_point = svec_get(entity->path, i);
+            event.x = path_point.x;
+            event.y = path_point.y;
+            event.ch = (char)i + '1';
+            event.color = 2;
+            r->b.render(r->b, event);
+        }
+    }
+#endif /*DEBUG_PATHFINDING*/
 }
 
 void update(Scene * s, RunTime * r, Id id) {
@@ -362,8 +389,8 @@ Scene create_scene(void) {
     Entity * entity = create_decoration(&result, 5, 5, '@', 200);
     entity->type = player;
 
-    entity = create_decoration(&result, 9, 9, 'r', 3);
-    entity->type = basic_melee;
+    /*entity = create_decoration(&result, 9, 9, 'r', 3);
+    entity->type = basic_melee;*/
     entity = create_decoration(&result, 11, 11, 'r', 3);
     entity->type = basic_melee;
 
