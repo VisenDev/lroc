@@ -3,7 +3,7 @@
 
 Action dummy_input(struct Backend self) {
     (void)self;
-    return ACTION_QUIT;
+    return ACTION_LEFT;
 }
 
 void dummy_render(struct Backend self, RenderEvent cmd) {

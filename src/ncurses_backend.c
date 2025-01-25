@@ -69,7 +69,7 @@ void ncurses_display(struct Backend self, const char * fmt, ...) {
 
     /*move cursor*/
     wmove(ctx->back, ctx->display_i, map_width + 1);
-    ctx->display_i += 2;
+    ctx->display_i += 1;
 
     va_list args;
     va_start(args, fmt);

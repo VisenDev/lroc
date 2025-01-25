@@ -112,9 +112,9 @@ void ansi_display(struct Backend self, const char * fmt, ...) {
     ctx->prev.ch = 0;
 
     /*move cursor*/
-    printf(ANSI_ESC "%d;%dH", ctx->display_i, map_width + 1);
+    printf(ANSI_ESC "%d;%dH", ctx->display_i, map_width + 2);
     printf(ANSI_COLOR_RESET);
-    ctx->display_i += 2;
+    ctx->display_i += 1;
 
     va_list args;
     va_start(args, fmt);
