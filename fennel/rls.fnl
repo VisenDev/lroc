@@ -26,17 +26,9 @@
   `(table.remove ,list (length ,list)))
 
 (lambda dump-table [tbl ?indentation]
-  ;(local indentation 
-  ;       (if (= ?indentation nil) 0 ?indentation))
-  ;(io.write (string.rep "  " indentation))
-  ;(io.write "{\n")
-  ;(io.write (string.rep "  " (+ 1 indentation)))
-
-  ;(io.write (string.rep "  " (orelse ?indentation 0)))
   (io.write "{\n")
   (each [key value (pairs tbl)]
     (io.write (string.rep "  " (orelse ?indentation 1)))
-    ;(print "VALUE" value)
     (if (= (type value) :table)
         (do
           (io.write key ": ")
@@ -45,14 +37,16 @@
         (do
           (io.write key)
           (io.write ": ")
-          (io.write (tostring value))
+          (io.write (.. "\"" (tostring value) "\""))
           (io.write "\n"))))
     (io.write (string.rep "  " (- (orelse ?indentation 0) 1)))
     (io.write "}\n")
     )
 
-  ;(io.write (string.rep "  " indentation))
-  ;(io.write "}\n")))
+(macro assert-not-null [value]
+  `(assert (not (= nil ,value))
+           "Value is null"))
+
 
 ;;Internals
 (var cgen {
@@ -69,109 +63,117 @@
      :identifiers [{}]
      })
 
-(set sema.bound?
-     (lambda [self identifier]
-       (var found false)
-       (each [_ scope (ipairs self.identifiers)]
-         (when
-           (not (= nil (?. scope identifier)))
-           (set found true)
-           ))
-       found))
+(lambda sema.bound? [self identifier]
+  (var found false)
+  (each [_ scope (ipairs self.identifiers)]
+    (when
+      (not (= nil (?. scope identifier)))
+      (set found true)
+      ))
+  found)
 
-(set sema.unbound? 
-     (lambda [self identifier]
-       (not (self:bound? identifier))))
+(lambda sema.unbound? [self identifier]
+  (not (self:bound? identifier)))
 
-(set sema.block-start
-     (lambda [self]
-     "Enters a new scope for identifiers"
-       (push! self.identifiers {})))
+(lambda sema.block-start [self]
+  "Enters a new scope for identifiers"
+  (push! self.identifiers {}))
 
-(set sema.block-end
-     (lambda [self]
-     "Exits a scope for identifiers"
-       (pop! self.identifiers)))
+(lambda sema.block-end [self]
+  "Exits a scope for identifiers"
+  (pop! self.identifiers))
 
-(set sema.bind 
-     (lambda [self identifier value]
-       (assert (self:unbound? identifier)
-               (.. "Multiply defined symbol \"" identifier "\""))
-       (assert (identifier? identifier)
-               (.. "Invalid identifier name \"" identifier "\""))
-       (tset (last self.identifiers) identifier value)
-       (assert (self:bound? identifier)
-               (.. "Internal error, failed to bind symbol \"" identifier "\""))
+(lambda sema.bind [self identifier value]
+  (assert (self:unbound? identifier)
+          (.. "Multiply defined symbol \"" identifier "\""))
+  (assert (identifier? identifier)
+          (.. "Invalid identifier name \"" identifier "\""))
+  (tset (last self.identifiers) identifier value)
+  (assert (self:bound? identifier)
+          (.. "Internal error, failed to bind symbol \"" identifier "\""))
+  )
+
+(lambda sema.type? [self type-id]
+  "returns whether the type-id is a valid defined type"
+  (assert-not-null self)
+  (assert-not-null type-id)
+  (assert-not-null self.identifiers)
+  (and (self:bound? type-id)
+       (do 
+         (var found false)
+         (each [_ scope (ipairs self.identifiers)]
+           (assert-not-null scope)
+           (local identifier-value (?. scope type-id))
+           (local category (?. identifier-value :category))
+           (assert-not-null category)
+           (when (and 
+                   (not (= nil category))
+                   (member? category
+                            [:type-primitive :type-enum :type-struct :type-union]))
+             (set found true)))
+         found)
        ))
 
-(set sema.type?
-     (lambda [self type-id]
-       "returns whether the type-id is a valid defined type"
-       (and (self:bound? type-id)
-            (do 
-              (var found false)
-              (each [_ scope (ipairs self.identifiers)]
-                (local identifier-value (?. self.identifiers type-id))
-                (local category (?. identifier-value :category))
-                (print (.. "category is " (tostring category)))
-                (when (and 
-                        (not (= nil category))
-                        (member? category
-                              [:type-primitive :type-enum :type-struct :type-union]))
-                  (set found true)))
-              found)
-                )))
-(set sema.record-primitive
-     (lambda [self type-id c-representation]
-       (assert (self:unbound? type-id)
-               (.. "Multiply defined symbol \"" type-id "\""))
-       (assert (identifier? type-id)
-               (.. "Invalid primitive name \"" type-id "\""))
-       (self:bind type-id {
+(lambda sema.record-primitive [self type-id c-representation]
+  (assert (self:unbound? type-id)
+          (.. "Multiply defined symbol \"" type-id "\""))
+  (assert (identifier? type-id)
+          (.. "Invalid primitive name \"" type-id "\""))
+  (self:bind type-id {
              :c-representation c-representation
              :category :type-primitive})
-       ))
-(set sema.record-enum 
-     (lambda [self type-id fields]
-       (assert (self:unbound? type-id)
-               (.. "Multiply defined symbol \"" type-id "\""))
-       (assert (identifier? type-id)
-               (.. "Invalid enum name \"" type-id "\""))
-       (each [_ value (ipairs fields)]
-         (assert (identifier? value)
-                 (.. "Invalid enum field name \"" value "\"")))
-       (self:bind type-id {
+  )
+
+(lambda sema.record-enum [self type-id fields]
+  (assert (self:unbound? type-id)
+          (.. "Multiply defined symbol \"" type-id "\""))
+  (assert (identifier? type-id)
+          (.. "Invalid enum name \"" type-id "\""))
+  (each [_ value (ipairs fields)]
+    (assert (identifier? value)
+            (.. "Invalid enum field name \"" value "\"")))
+  (self:bind type-id {
              :category :type-enum
              :c-representation type-id
-             :fields :fields
-           })))
-(set sema.record-struct
-     (lambda [self type-id fields]
-       (assert (self:unbound? type-id)
-               (.. "Multiply defined symbol \"" type-id "\""))
-       (assert (identifier? type-id)
-               (.. "Invalid enum name \"" type-id "\""))
-       (each [_ field (ipairs fields)]
-         (assert (identifier? field.type-id)
-                 (.. "Invalid struct field type \"" field.type-id "\""))
-         (assert (identifier? field.name)
-                 (.. "Invalid struct field name \"" field.name "\""))
-         )
-       (self:bind type-id {
-             :category :type-enum
+             :fields fields
+             }))
+
+(lambda sema.record-struct [self type-id fields]
+  (assert (self:unbound? type-id)
+          (.. "Multiply defined symbol \"" type-id "\""))
+  (assert (identifier? type-id)
+          (.. "Invalid enum name \"" type-id "\""))
+  (each [_ field (ipairs fields)]
+    (assert (identifier? field.type-id)
+            (.. "Invalid struct field type \"" field.type-id "\""))
+    (assert (identifier? field.name)
+            (.. "Invalid struct field name \"" field.name "\""))
+    )
+  (self:bind type-id {
+             :category :type-struct
              :c-representation type-id
-             :fields :fields
+             :fields fields
              }
-             )))
+             ))
 
 
 (sema:record-primitive :int "int")
+(assert (sema:type? :int))
+
 (sema:record-primitive :uint "unsigned int")
-;(print (sema:bound? :int))
-;(print (sema:type? :int))
+(assert (sema:type? :uint))
+
+(sema:record-primitive :float "float")
+(assert (sema:type? :float))
+
+(sema:record-enum :error_codes [:none :out_of_memory :out_of_bounds])
+(assert (sema:type? :error_codes))
+
+(sema:record-struct :vector2 [{:name :x :type-id :float} {:name :y :type-id :float}])
+(assert (sema:type? :vector2))
+
+(io.write "\nsema: ")
 (dump-table sema)
-(print " ")
-(dump-table {:hello :world :hi :there :foo {:bar :bap :nil :nap}})
 
 
 ;(cgen:indent)
