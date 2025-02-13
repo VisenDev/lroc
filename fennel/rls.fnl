@@ -49,6 +49,15 @@
 
 
 ;;Internals
+
+(local keywords [
+  "auto" "break" "case" "char" "const" "continue" "default" "do" "double"
+  "else" "enum" "extern" "float" "for" "goto" "if" "inline" "int" "long"
+  "register" "restrict" "return" "short" "signed" "sizeof" "static" "struct"
+  "switch" "typedef" "union" "unsigned" "void" "volatile" "while" "_Alignas"
+  "_Alignof" "_Atomic" "_Bool" "bool" "_Complex" "_Generic" "_Imaginary" "_Noreturn"
+  "_Static_assert" "static_assert" "_Thread_local"])
+
 (var cgen {
      :indent-level 1
      :out io.write
@@ -88,6 +97,7 @@
           (.. "Multiply defined symbol \"" identifier "\""))
   (assert (identifier? identifier)
           (.. "Invalid identifier name \"" identifier "\""))
+  (assert-not-null (?. value :category))
   (tset (last self.identifiers) identifier value)
   (assert (self:bound? identifier)
           (.. "Internal error, failed to bind symbol \"" identifier "\""))
@@ -142,9 +152,9 @@
   (assert (self:unbound? type-id)
           (.. "Multiply defined symbol \"" type-id "\""))
   (assert (identifier? type-id)
-          (.. "Invalid enum name \"" type-id "\""))
+          (.. "Invalid struct name \"" type-id "\""))
   (each [_ field (ipairs fields)]
-    (assert (identifier? field.type-id)
+    (assert (self:type? field.type-id)
             (.. "Invalid struct field type \"" field.type-id "\""))
     (assert (identifier? field.name)
             (.. "Invalid struct field name \"" field.name "\""))
@@ -155,6 +165,40 @@
              :fields fields
              }
              ))
+
+(lambda sema.record-union [self type-id fields]
+  (assert (self:unbound? type-id)
+          (.. "Multiply defined symbol \"" type-id "\""))
+  (assert (identifier? type-id)
+          (.. "Invalid union name \"" type-id "\""))
+  (each [_ field (ipairs fields)]
+    (assert (self:type? field.type-id)
+            (.. "Invalid union field type \"" field.type-id "\""))
+    (assert (identifier? field.name)
+            (.. "Invalid union field name \"" field.name "\""))
+    )
+  (self:bind type-id {
+             :category :type-union
+             :c-representation type-id
+             :fields fields
+             }
+             ))
+
+(lambda sema.record-variable [self name type-id is-const]
+  (assert (self:unbound? name)
+          (.. "Multiply defined symbol \"" name "\""))
+  (assert (not (member? name keywords))
+          (.. "Variable name is reserved keyword \"" name "\""))
+  (assert (self:type? type-id)
+          (.. "Invalid varible type\"" type-id "\""))
+  (sema:bind name {
+    :category :variable
+    :is-const is-const
+    ;:name name
+    :type-id type-id
+    })
+  )
+
 
 
 (sema:record-primitive :int "int")
@@ -171,6 +215,11 @@
 
 (sema:record-struct :vector2 [{:name :x :type-id :float} {:name :y :type-id :float}])
 (assert (sema:type? :vector2))
+
+(sema:record-union :my_generic [{:name :real :type-id :float} {:name :integer :type-id :int}])
+(assert (sema:type? :my_generic))
+
+(sema:record-variable :i :int false)
 
 (io.write "\nsema: ")
 (dump-table sema)
